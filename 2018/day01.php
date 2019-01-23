@@ -3,9 +3,16 @@
 $fh = fopen(__DIR__.'/inputs/01.txt', 'r');
 $running = 0;
 
-while (!feof($fh)) {
+$seen = [];
+
+while (true) {
     $line = trim(fgets($fh));
     if (empty($line)) {
+        if (feof($fh)) {
+            fseek($fh, 0);
+            echo '.';
+        }
+
         continue;
     }
 
@@ -16,6 +23,15 @@ while (!feof($fh)) {
 
     $newRunning = $running + ($number * $mod);
 
-    echo sprintf('%d + %s => %d'.PHP_EOL, $running, $line, $newRunning);
+    if (in_array($newRunning, $seen)) {
+        echo sprintf('%d + %s => %d !! DOUBLE'.PHP_EOL, $running, $line, $newRunning);
+        break;
+    } else {
+        $seen[] = $newRunning;
+    }
+
+    //echo sprintf('%d + %s => %d'.PHP_EOL, $running, $line, $newRunning);
     $running = $newRunning;
 }
+
+fclose($fh);
