@@ -7,6 +7,7 @@ class Fabric
     public $y;
     public $w;
     public $h;
+    public $overlaps = false;
 
     public function __construct(int $id, int $x, int $y, int $w, int $h)
     {
@@ -16,15 +17,18 @@ class Fabric
         $this->w = $w;
         $this->h = $h;
     }
+
+    public static function intersects(self $a, self $b) : bool
+    {
+        return !($a->x > $b->x + $b->w ||
+            $a->x + $a->w < $b->x ||
+            $a->y > $b->y + $b->h ||
+            $a->y + $a->h < $b->y);
+    }
 }
 
 $fh = fopen(__DIR__.'/inputs/03.txt', 'r');
-//$fabrics = [];
-// $material[x][y] = [ ids ]
-$material = [];
-
-$maxX = 0;
-$maxY = 0;
+$fabrics = [];
 
 while (!feof($fh)) {
     $line = trim(fgets($fh));
@@ -39,44 +43,31 @@ while (!feof($fh)) {
         continue;
     }
 
-    $f = new Fabric(intval($matches[1]), intval($matches[2]), intval($matches[3]), intval($matches[4]), intval($matches[5]));
-    $maxX = max($maxX, $f->x + $f->w);
-    $maxY = max($maxY, $f->y + $f->h);
-
-    for ($y = $f->y; $y < ($f->y + $f->h); $y++) {
-        for ($x = $f->x; $x < ($f->x + $f->w); $x++) {
-            if (!array_key_exists($x, $material)) {
-                $material[$x] = [];
-            }
-
-            if (!array_key_exists($y, $material[$x])) {
-                $material[$x][$y] = 0;
-            }
-
-            $material[$x][$y]++;
-        }
-    }
+    $fabrics[] = new Fabric(intval($matches[1]), intval($matches[2]), intval($matches[3]), intval($matches[4]), intval($matches[5]));
 }
 
 fclose($fh);
 
-$coverage = 0;
+$fabricCount = count($fabrics);
 
-for ($i = 0; $i <= $maxY; $i++) {
-    for ($j = 0; $j <= $maxX; $j++) {
-        if (array_key_exists($j, $material) && array_key_exists($i, $material[$j])) {
-            if ($material[$j][$i] > 1) {
-                $coverage++;
-            }
+for ($i = 0; $i < $fabricCount; $i++) {
+    $a = $fabrics[$i];
+
+    for ($j = 0; $j < $fabricCount; $j++) {
+        $b = $fabrics[$j];
+        if ($i === $j) {
+            continue;
+        }
+
+        if (Fabric::intersects($a, $b)) {
+            $a->overlaps = true;
+            $b->overlaps = true;
         }
     }
 }
 
-/*$coverage = 0;
-array_walk_recursive($material, function($item, $key) use (&$coverage) {
-    if ($item > 1) {
-        $coverage++;
-    }
-});*/
+$noOverlap = array_filter($fabrics, function(Fabric $f) {
+    return !$f->overlaps;
+});
 
-var_dump($coverage);
+var_dump($noOverlap);
