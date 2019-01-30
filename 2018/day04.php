@@ -58,8 +58,8 @@ usort($logs, function(Log $a, Log $b) {
     return $a->when <=> $b->when;
 });
 
-// find the sleepiest guards by minutes slept
-$sleepiestGuards = [];
+// map the guards and times slept on each minute
+$guardMinuteMap = [];
 $currentGuardId = $logs[0]->guardId;
 $fellAsleep = null;
 
@@ -77,45 +77,35 @@ foreach ($logs as $l) {
     }
 
     if ($l->wakesUp) {
-        $timeAsleep = intval(($l->when->diff($fellAsleep))->format('%i')) - 1;
-
-        if (!array_key_exists($l->guardId, $sleepiestGuards)) {
-            $sleepiestGuards[$l->guardId] = 0;
-        }
-
-        $sleepiestGuards[$l->guardId] += $timeAsleep;
-    }
-}
-
-asort($sleepiestGuards, SORT_NUMERIC);
-$sleepiestGuards = array_reverse($sleepiestGuards, true);
-$sleepiestGuardId = key($sleepiestGuards); // array cursor is rewound
-
-// get all of the log entries pertaining to the sleepiest guard
-$sleepyLogs = array_filter($logs, function(Log $l) use ($sleepiestGuardId) {
-    return $l->guardId === $sleepiestGuardId;
-});
-
-// find the sleepiest minute
-$sleepyMinutes = array_fill(0, 59, 0);
-$fellAsleep = null;
-
-foreach ($sleepyLogs as $l) {
-    if ($l->fallsAsleep) {
-        $fellAsleep = $l->when;
-    }
-
-    if ($l->wakesUp) {
         $minStart = intval($fellAsleep->format('i'));
         $minEnd = intval($l->when->format('i'));
 
+        if (!array_key_exists($l->guardId, $guardMinuteMap)) {
+            $guardMinuteMap[$l->guardId] = array_fill(0, 59, 0);
+        }
+
         for ($i = $minStart; $i < $minEnd; $i++) {
-            $sleepyMinutes[$i]++;
+            $guardMinuteMap[$l->guardId][$i]++;
         }
     }
 }
 
-asort($sleepyMinutes, SORT_NUMERIC);
-$sleepyMinutes = array_reverse($sleepyMinutes, true);
+$sleepiestGuardId = null;
+$sleepiestMinute = null;
+$sleepiestMinuteCount = null;
 
-var_dump(key($sleepyMinutes) * $sleepiestGuardId);
+foreach ($guardMinuteMap as $guardId => $minutes) {
+    asort($minutes, SORT_NUMERIC);
+    $mins = array_reverse($minutes, true);
+
+    $sm = key($mins);
+    $smc = $mins[$sm];
+
+    if ($smc > $sleepiestMinuteCount) {
+        $sleepiestMinute = $sm;
+        $sleepiestMinuteCount = $smc;
+        $sleepiestGuardId = $guardId;
+    }
+}
+
+var_dump($sleepiestGuardId * $sleepiestMinute);
