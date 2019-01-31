@@ -1,11 +1,8 @@
 <?php
 
-$polymer = trim(file_get_contents(__DIR__.'/inputs/05.txt'));
-$newPolymer = $polymer;
+$fullPolymer = trim(file_get_contents(__DIR__.'/inputs/05.txt'));
 
-$blockSize = 100;
-
-function reduceBlock(array $block) : array
+function reduceBlock(array $block, string $forceRemove) : array
 {
     //echo implode($block).PHP_EOL;
     $newBlock = [];
@@ -16,7 +13,10 @@ function reduceBlock(array $block) : array
 
         //echo '  Comparing '.$a.' vs '.$b.PHP_EOL;
 
-        if ($a !== $b && strtolower($a) === strtolower($b)) {
+        if (strtolower($a) === strtolower($forceRemove)) {
+            //echo '  Force removing'.PHP_EOL;
+            continue;
+        } else if ($a !== $b && strtolower($a) === strtolower($b)) {
             //echo '  Removing'.PHP_EOL;
             $j++;
         } else {
@@ -31,34 +31,34 @@ function reduceBlock(array $block) : array
     return $newBlock;
 }
 
-do {
-    $polymer = $newPolymer;
-    /*$blockCount = ceil(strlen($polymer) / $blockSize);
-    $blocks = [];
+$letters = range('a', 'z');
+$letterToLength = array_combine($letters, array_fill(0, 26, 0));
 
-    for ($i = 0; $i < $blockCount; $i++) {
-        $block = str_split(substr($polymer, ($i * $blockSize), $blockSize));
-        $newBlock = reduceBlock($block);
+foreach ($letters as $letter) {
+    $polymer = $fullPolymer;
+    $newPolymer = $fullPolymer;
+
+    do {
+        $polymer = $newPolymer;
+
+        $block = str_split($polymer);
+        $newBlock = reduceBlock($block, $letter);
 
         while (count($newBlock) < count($block)) {
             $block = $newBlock;
-            $newBlock = reduceBlock($block);
+            $newBlock = reduceBlock($block, $letter);
         }
 
-        $blocks[] = $block;
-    }*/
+        $newPolymer = array_reduce($block, function($acc, $b) {
+            return $acc . ((is_string($b)) ? $b: implode($b));
+        }, '');
+    } while (strlen($newPolymer) < strlen($polymer));
 
-    $block = str_split($polymer);
-    $newBlock = reduceBlock($block);
+    $letterToLength[$letter] = strlen($polymer);
+    echo $letter.' - '.strlen($polymer).PHP_EOL;
+}
 
-    while (count($newBlock) < count($block)) {
-        $block = $newBlock;
-        $newBlock = reduceBlock($block);
-    }
+asort($letterToLength, SORT_NUMERIC);
+reset($letterToLength);
 
-    $newPolymer = array_reduce($block, function($acc, $b) {
-        return $acc . ((is_string($b)) ? $b: implode($b));
-    }, '');
-} while (strlen($newPolymer) < strlen($polymer));
-
-var_dump(strlen($polymer));
+echo key($letterToLength).' - '.current($letterToLength);
