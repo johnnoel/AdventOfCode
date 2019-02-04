@@ -8,6 +8,21 @@ class Node
     public $metadataCount = 0;
     public $metadata = [];
     public $children = [];
+
+    public function getValue()
+    {
+        if ($this->childCount === 0) {
+            return array_sum($this->metadata);
+        }
+
+        return array_sum(array_map(function(int $idx) {
+            if ($idx === 0 || !array_key_exists($idx - 1, $this->children)) {
+                return 0;
+            }
+
+            return $this->children[$idx - 1]->getValue();
+        }, $this->metadata));
+    }
 }
 
 function descend(array &$remaining)
@@ -54,4 +69,4 @@ function countMetadata(Node $node) : int
 
 $rootNode = descend($rawLicense);
 
-var_dump(countMetadata($rootNode));
+var_dump($rootNode->getValue());
