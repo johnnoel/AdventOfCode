@@ -24,101 +24,38 @@ foreach ($instructions as $inst) {
     $map[$step][] = $mustFinish;
 }
 
-$seenSteps = array_unique(array_reduce($map, function($acc, $steps) {
-    return array_merge($acc, $steps);
-}, []));
-
 // which steps have we seen, but don't have any pre-requisites to start?
-$startingSteps = array_diff($seenSteps, array_keys($map));
-sort($startingSteps);
-
-$performed = $startingSteps;
+$availableSteps = array_diff(range('A', 'Z'), array_keys($map));
+$performed = [];
 
 while (true) {
-    // which steps have we not performed?
-    $availableSteps = array_diff(array_keys($map), $performed);
+    sort($availableSteps);
+    $performed[] = array_shift($availableSteps);
 
-    if (count($availableSteps) === 0) {
-        echo 'Exhausted available steps with path: '.implode(' -> ', $performed).PHP_EOL;
-        echo implode($performed).PHP_EOL;
-        break;
-    }
+    foreach ($map as $step => $preReqs) {
+        // if we've already done it or it's already possible
+        if (in_array($step, $performed) || in_array($step, $availableSteps)) {
+            continue;
+        }
 
-    $nextSteps = [];
-
-    foreach ($availableSteps as $availableStep) {
-        // have we performed all the necessary steps to perform the available one?
-        foreach ($map[$availableStep] as $neededStep) {
-            if (!in_array($neededStep, $performed)) {
+        // if we don't match the prerequisites for performing the step
+        foreach ($preReqs as $preReq) {
+            if (!in_array($preReq, $performed)) {
                 continue 2;
             }
         }
 
-        $nextSteps[] = $availableStep;
+        $availableSteps[] = $step;
     }
 
-    if (count($nextSteps) === 0) {
-        echo 'Dead end with path: '.implode(' -> ', $performed).PHP_EOL;
-        break;
-    }
-
-    sort($nextSteps);
-    $performed[] = reset($nextSteps);
-}
-
-/*$allAfters = array_reduce($afterMap, function($acc, $item) {
-    return array_merge($acc, $item);
-}, []);
-
-$startingPoints = array_diff(range('A', 'Z'), $allAfters);
-
-foreach ($startingPoints as $startingInstruction) {
-    $performed = [ $startingInstruction ];
-
-    while (count($performed) < 26) {
-        $lastInstruction = end($performed);
-        $possibleNextSteps = $afterMap[$lastInstruction];
-
-        if (empty($possibleNextSteps)) {
-            echo 'Dead end for journey '.implode(' -> ', $performed).PHP_EOL;
+    if (count($availableSteps) === 0) {
+        if (count($performed) === 26) {
+            echo 'Success: '.implode(' -> ', $performed).PHP_EOL;
+            echo implode($performed).PHP_EOL;
+            break;
+        } else {
+            echo 'Dead end: '.implode(' -> ', $performed).PHP_EOL;
             break;
         }
-
-        sort($possibleNextSteps);
-        $nextStep = reset($possibleNextSteps);
-
-        $performed[] = $nextStep;
-        //var_dump('------------------');
-
-        $notPerformed = array_diff(range('A', 'Z'), $performed);
-        $possibleNextSteps = array_diff($afterMap[end($performed)], $notPerformed);
-
-        if ($possibleNextSteps === null) {
-        }
-
-        sort($possibleNextSteps);
-        $performed[] = reset($possibleNextSteps);*/
-
-        /*$notPerformed = array_diff(array_keys($afterMap), $performed);
-        $possibleNextSteps = [];
-
-        foreach ($notPerformed as $step) {
-            $diff = array_diff($afterMap[$step], $performed);
-            if (count($diff) === 0) {
-                $possibleNextSteps[] = $step;
-            }
-        }
-
-        if (count($possibleNextSteps) === 0) {
-        }
-
-        sort($possibleNextSteps);
-        $performed[] = reset($possibleNextSteps);
     }
-
-    //break;
-
-    if (count($performed) === 26) {
-        var_dump(implode($performed));
-    }
-}*/
+}
