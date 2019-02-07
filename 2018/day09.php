@@ -1,5 +1,8 @@
 <?php
 
+gc_disable();
+ini_set('memory_limit', '1024M');
+
 $input = trim(file_get_contents(__DIR__.'/inputs/09.txt'));
 
 $matches = [];
@@ -11,7 +14,7 @@ if ($matched !== 1) {
 
 $playerCount = intval($matches[1]);
 //$playerCount = 9;
-$lastMarbleValue = intval($matches[2]);
+$lastMarbleValue = intval($matches[2]) * 100;
 //$lastMarbleValue = 25;
 
 $playerScores = array_fill(1, $playerCount, 0);
