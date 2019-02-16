@@ -60,6 +60,15 @@ with open('inputs/04.txt', 'r') as f:
 
     sleepy_guard = sorted_guards[0]
 
-    part_1 = sleepy_guard.id * sleepy_guard.minutes.index(max(sleepy_guard.minutes))
+    part_1 = (sleepy_guard.id, sleepy_guard.minutes.index(max(sleepy_guard.minutes)))
 
-    print(part_1)
+    max_sleep = 0
+    part_2 = ()
+
+    for guard in guards.values():
+        most_sleep = max(guard.minutes)
+        if most_sleep > max_sleep:
+            part_2 = (guard.id, guard.minutes.index(most_sleep))
+            max_sleep = most_sleep
+
+    print(part_1[0] * part_1[1], part_2[0] * part_2[1])
