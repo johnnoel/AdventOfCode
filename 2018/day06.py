@@ -10,6 +10,7 @@ max_x = max(coords, key=lambda v: v[0])[0]
 max_y = max(coords, key=lambda v: v[1])[1]
 
 grid = {}
+part_2 = 0
 
 for y in range(0, max_y):
     for x in range(0, max_x):
@@ -19,6 +20,9 @@ for y in range(0, max_y):
 
         if len(min_distance_coords) == 1:
             grid[(x, y)] = min_distance_coords[0]
+
+        if sum(distances.values()) < 10000:
+            part_2 += 1
 
 infinites = set()
 areas = defaultdict(int)
@@ -32,4 +36,4 @@ for xy in grid:
 
 part_1 = max(set(areas.values()) - infinites)
 
-print(part_1)
+print(part_1, part_2)
