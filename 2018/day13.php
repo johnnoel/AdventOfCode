@@ -17,10 +17,16 @@ class Track
     public $bottom;
     /** @var Track */
     public $left;
+    /** @var int */
+    public $x;
+    /** @var int */
+    public $y;
 
-    public function __construct(string $piece)
+    public function __construct(string $piece, int $x, int $y)
     {
         $this->piece = $piece;
+        $this->x = $x;
+        $this->y = $y;
     }
 }
 
@@ -30,6 +36,8 @@ class Train
     public $track;
     /** @var string */
     public $direction;
+    /** @var string */
+    public $lastTurn = null;
 
     public function __construct(Track $track, string $direction)
     {
@@ -59,23 +67,11 @@ foreach ($lines as $line) {
             continue;
         }
 
-        $grid[$x][$y] = new Track($piece);
+        $grid[$x][$y] = new Track($piece, $x, $y);
     }
 
     $x = -1;
 }
-
-/*for ($y = 0; $y < $maxY; $y++) {
-    for ($x = 0; $x < $maxX; $x++) {
-        if ($grid[$x][$y] === null) {
-            echo ' ';
-            continue;
-        }
-
-        echo $grid[$x][$y]->piece;
-    }
-    echo PHP_EOL;
-}*/
 
 $trains = [];
 
@@ -96,23 +92,23 @@ for ($y = 0; $y < $maxY; $y++) {
             $track->right = $grid[$x+1][$y];
             break;
         case '/':
-            // is this bottom right or top left?
-            if (array_key_exists($x+1, $grid) && $grid[$x+1][$y] !== null && in_array($grid[$x+1][$y]->piece, [ '-', '\\', '+', '>', '<' ])) {
-                $track->bottom = $grid[$x][$y+1];
-                $track->right = $grid[$x+1][$y];
-            } else {
+            // is this bottom right?
+            if (array_key_exists($x-1, $grid) && $grid[$x-1][$y] !== null && in_array($grid[$x-1][$y]->piece, [ '>', '<', '-', '+', '\\' ])) {
                 $track->top = $grid[$x][$y-1];
                 $track->left = $grid[$x-1][$y];
+            } else { // or top left?
+                $track->bottom = $grid[$x][$y+1];
+                $track->right = $grid[$x+1][$y];
             }
             break;
         case '\\':
-            // is this top right or bottom left?
-            if (array_key_exists($x+1, $grid) && $grid[$x+1][$y] !== null && $grid[$x+1][$y]->piece === '-') {
-                $track->top = $grid[$x][$y-1];
-                $track->right = $grid[$x+1][$y];
-            } else {
+            // is this top right?
+            if (array_key_exists($x-1, $grid) && $grid[$x-1][$y] !== null && in_array($grid[$x-1][$y]->piece, [ '>', '<', '-', '+', '/' ])) {
                 $track->bottom = $grid[$x][$y+1];
                 $track->left = $grid[$x-1][$y];
+            } else { // or bottom left?
+                $track->top = $grid[$x][$y-1];
+                $track->right = $grid[$x+1][$y];
             }
             break;
         case '+':
@@ -150,4 +146,33 @@ for ($y = 0; $y < $maxY; $y++) {
     }
 }
 
-var_dump(count($trains));
+$crashed = false;
+while (!$crashed) {
+    foreach ($trains as $train) {
+        switch ($train->direction) {
+        case Direction::UP:
+            $nextTrack = $train->track->top;
+            if ($nextTrack->piece === '/') {
+                $train->direction = Direction::RIGHT;
+            } else if ($nextTrack->piece === '\\') {
+                $train->direction = Direction::LEFT;
+            } else if ($nextTrack->piece === '+') {
+                if ($train->lastTurn === null || $train->lastTurn === Direction::RIGHT) {
+                    $train->direction = Direction::LEFT;
+                } else if ($train->lastTurn === Direction::LEFT) {
+                } else if ($train->lastTurn === Direction::UP || $train->lastTurn === Direction::DOWN) {
+                    $train->direction = null;
+                }
+            }
+            break;
+        case Direction::DOWN:
+            break;
+        case Direction::LEFT:
+            break;
+        case Direction::RIGHT:
+            break;
+        }
+    }
+}
+
+//var_dump(count($trains));
