@@ -20,6 +20,11 @@ class Orbiter
         $this->name = $name;
         $this->orbitsAround = $orbitsAround;
     }
+
+    public function __toString(): string
+    {
+        return $this->name;
+    }
 }
 
 $input = array_filter(explode("\n", file_get_contents(__DIR__.'/day06.txt')));
@@ -57,35 +62,37 @@ foreach ($orbiters as $orbiter) {
     }
 }
 
-$path = [ $you ];
-function recurse(Orbiter $o, array $pathSoFar, array &$solutions, array &$visited): void
+function recurse(Orbiter $o, array $pathSoFar, array &$solutions): void
 {
+    $pathSoFar[] = $o;
+
     if ($o->name === 'SAN') {
         $solutions[] = $pathSoFar;
         return;
     }
 
-    $visited[$o->name] = true;
+    $possible = array_diff(
+        array_merge($o->orbiters ?? [], [ $o->orbitsAround ]),
+        $pathSoFar
+    );
 
-    $toCheck = array_merge([ $o->orbitsAround ], $o->orbiters ?? []);
-    foreach ($toCheck as $tc) {
-        if ($tc === null || array_key_exists($tc->name, $visited)) {
+    foreach ($possible as $tc) {
+        if ($tc === null) {
             continue;
         }
 
-        $newPath = array_merge([], $pathSoFar, [ $tc ]);
-        recurse($tc, $newPath, $solutions, $visited);
+        recurse($tc, $pathSoFar, $solutions);
     }
 }
 
+$path = [];
 $solutions = [];
-$visited = [ 'YOU' => true ];
-recurse($you, $path, $solutions, $visited);
+recurse($you, $path, $solutions);
 
 foreach ($solutions as $solution) {
     foreach ($solution as $orbiter) {
-        echo $orbiter->name.PHP_EOL;
+        echo $orbiter->name.' -> ';
     }
 
-    echo count($solution).PHP_EOL;
+    echo PHP_EOL.(count($solution) - 3).PHP_EOL.PHP_EOL;
 }
