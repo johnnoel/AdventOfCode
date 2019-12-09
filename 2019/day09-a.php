@@ -84,42 +84,22 @@ class Intputer
 
             // all instructions apart from 99 take at least one input
             $aVal = $this->getParameter(1, $paramModes[0]);
-            //$aVal = ($paramModes[0] === 0) ? $this->program[$this->program[$this->pointer + 1]] : $this->program[$this->pointer + 1];
 
             // perform the different actions for the opcodes
             if (in_array($opcode, [1, 2])) { // sum, mult
                 $bVal = $this->getParameter(2, $paramModes[1]);
-                //$bVal = ($paramModes[1] === 0) ? $this->program[$this->program[$this->pointer + 2]] : $this->program[$this->pointer + 2];
                 $result = ($opcode === 1) ? $aVal + $bVal : $aVal * $bVal;
-
-                if ($paramModes[2] === 0) {
-                    $this->program[$this->program[$this->pointer + 3]] = $result;
-                } else {
-                    $this->program[$this->pointer + 3] = $result;
-                }
-
+                $this->setParameter(3, $paramModes[2], $result);
                 $this->pointer += 4;
             } elseif ($opcode === 3) { // set
                 $actualInput = array_shift($this->input);
-                if ($paramModes[0] === 0) {
-                    $this->program[$this->program[$this->pointer + 1]] = $actualInput;
-                } else {
-                    $this->program[$this->pointer + 1] = $actualInput;
-                }
-
+                $this->setParameter(1, $paramModes[0], $actualInput);
                 $this->pointer += 2;
             } elseif ($opcode === 4) { // print
-                if ($paramModes[0] === 0) {
-                    $ret = intval($this->program[$this->program[$this->pointer + 1]]);
-                } else {
-                    $ret = intval($this->program[$this->pointer + 1]);
-                }
-
                 $this->pointer += 2;
                 return $aVal;
             } elseif (in_array($opcode, [5, 6])) { // jump if true/false
                 $bVal = $this->getParameter(2, $paramModes[1]);
-                //$bVal = ($paramModes[1] === 0) ? $this->program[$this->program[$this->pointer + 2]] : $this->program[$this->pointer + 2];
 
                 // the jump action for both opcodes is the same, only the condition is different
                 if (($opcode === 5 && $aVal !== 0) || ($opcode === 6 && $aVal === 0)) {
@@ -129,7 +109,6 @@ class Intputer
                 }
             } elseif (in_array($opcode, [7, 8])) { // less than, equals
                 $bVal = $this->getParameter(2, $paramModes[1]);
-                //$bVal = ($paramModes[1] === 0) ? $this->program[$this->program[$this->pointer + 2]] : $this->program[$this->pointer + 2];
                 $toStore = 0;
 
                 // like jump opcodes, the action is the same but the condition for what to store is different
@@ -137,12 +116,7 @@ class Intputer
                     $toStore = 1;
                 }
 
-                if ($paramModes[2] === 0) {
-                    $this->program[$this->program[$this->pointer + 3]] = $toStore;
-                } else {
-                    $this->program[$this->pointer + 3] = $toStore;
-                }
-
+                $this->setParameter(3, $paramModes[2], $toStore);
                 $this->pointer += 4;
             } elseif ($opcode === 9) {
                 $this->base += $aVal;
@@ -177,6 +151,30 @@ class Intputer
         }
 
         throw new RuntimeException('Bad parameter mode');
+    }
+
+    private function setParameter(int $pointerOffset, int $mode, int $value): void
+    {
+        $offset = $this->pointer + $pointerOffset;
+        if (!array_key_exists($offset, $this->program)) {
+            $this->program[$offset] = 0;
+        }
+
+        if (!array_key_exists($this->program[$offset], $this->program)) {
+            $this->program[$this->program[$offset]] = 0;
+        }
+
+        switch ($mode) {
+            case 0: // position
+                $this->program[$this->program[$offset]] = $value;
+                break;
+            case 1: // value
+                $this->program[$offset] = $value;
+                break;
+            case 2: // relative position
+                $this->program[$this->program[$offset] + $this->base] = $value;
+                break;
+        }
     }
 }
 
