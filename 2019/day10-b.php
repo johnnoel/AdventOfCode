@@ -23,6 +23,14 @@ function isBetween(int $ax, int $ay, int $bx, int $by, int $cx, int $cy): bool
     return true;
 }
 
+/**
+ * Get all of the visible asteroids from point $ax, $ay
+ *
+ * @param int $ax
+ * @param int $ay
+ * @param array $asteroids
+ * @return array
+ */
 function getVisible(int $ax, int $ay, array $asteroids): array
 {
     $visible = [];
@@ -44,7 +52,6 @@ function getVisible(int $ax, int $ay, array $asteroids): array
             [ $cx, $cy ] = $c;
 
             if (isBetween($ax, $ay, $bx, $by, $cx, $cy)) {
-                echo '.';
                 $canSee = false;
                 break;
             }
@@ -58,16 +65,9 @@ function getVisible(int $ax, int $ay, array $asteroids): array
     return $visible;
 }
 
-//$coords = [ 31, 20 ];
-$coords = [ 8, 3 ];
+$coords = [ 31, 20 ];
 
 $lines = explode("\n", trim(file_get_contents(__DIR__.'/day10.txt')));
-$lines = explode("\n",
-'.#....#####...#..
-##...##.#####..##
-##...#...#.#####.
-..#.....#...###..
-..#.#.....#....##');
 
 $grid = array_map(function (string $line): array {
     return str_split(trim($line));
@@ -87,8 +87,29 @@ $availableAsteroids = array_merge(array_filter($asteroids, function (array $aste
     return !($asteroid[0] === $coords[0] && $asteroid[1] === $coords[1]);
 }));
 
+$vaporised = 0;
+
 while (!empty($availableAsteroids)) {
+    //echo count($availableAsteroids);
     $visible = getVisible($coords[0], $coords[1], $availableAsteroids);
-    var_dump($visible);
-    break;
+    $angles = [];
+
+    foreach ($visible as $k => [ $x, $y ]) {
+        $angle = atan2($x - $coords[0], $y - $coords[1]);
+        $angles[$k] = $angle;
+    }
+
+    arsort($angles, SORT_NUMERIC);
+
+    foreach ($angles as $k => $angle) {
+        $x = $visible[$k][0];
+        $y = $visible[$k][1];
+        echo sprintf('[%d] %d,%d => %f', ++$vaporised, $x, $y, $angle).PHP_EOL;
+    }
+
+    $availableAsteroids = array_merge(array_filter($availableAsteroids, function (array $xy) use ($visible): bool {
+        return !in_array($xy, $visible);
+    }));
+
+    //echo count($availableAsteroids);
 }
