@@ -229,10 +229,10 @@ $minY = min($yVals);
 $maxY = max($yVals);
 
 $painted = 0;
-for ($x = $minX; $x <= $maxX; $x++) {
-    for ($y = $minY; $y <= $maxY; $y++) {
+for ($y = $minY; $y <= $maxY; $y++) {
+    for ($x = $minX; $x <= $maxX; $x++) {
         if (empty($grid[$x][$y]) || $grid[$x][$y] === 0) {
-            echo '.';
+            echo ' ';
         } else {
             echo '#';
         }
