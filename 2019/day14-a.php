@@ -2,37 +2,33 @@
 
 class Reaction
 {
-    /** @var Substance[] */
+    /** @var Reaction */
+    public $parent = null;
+    /** @var Reaction[] */
+    public $children = [];
+    /** @var array */
     public $inputs;
-    /** @var Substance */
+    /** @var array */
     public $output;
+    /** @var int */
+    public $multiplier = 1;
 
     /**
      * @param array $inputs
-     * @param Substance $output
+     * @param array $output
      */
-    public function __construct(array $inputs, Substance $output)
+    public function __construct(array $inputs, array $output)
     {
         $this->inputs = $inputs;
         $this->output = $output;
     }
-}
-
-class Substance
-{
-    /** @var string */
-    public $name;
-    /** @var int */
-    public $amount;
 
     /**
-     * @param string $name
-     * @param int $amount
+     * @param int $multiplier
      */
-    public function __construct(string $name, int $amount)
+    public function setMultiplier(int $multiplier): void
     {
-        $this->name = $name;
-        $this->amount = $amount;
+        $this->multiplier = $multiplier;
     }
 }
 
@@ -54,23 +50,19 @@ function findReactionForSubstance(string $name, array $reactions): ?Reaction
 }
 
 $input = explode("\n", trim(file_get_contents(__DIR__.'/day14.txt')));
-$input = explode("\n", '2 VPVL, 7 FWMGM, 2 CXFTF, 11 MNCFX => 1 STKFG
-17 NVRVD, 3 JNWZP => 8 VPVL
-53 STKFG, 6 MNCFX, 46 VJHF, 81 HVMC, 68 CXFTF, 25 GNMV => 1 FUEL
-22 VJHF, 37 MNCFX => 5 FWMGM
-139 ORE => 4 NVRVD
-144 ORE => 7 JNWZP
-5 MNCFX, 7 RFSQX, 2 FWMGM, 2 VPVL, 19 CXFTF => 3 HVMC
-5 VJHF, 7 MNCFX, 9 VPVL, 37 CXFTF => 6 GNMV
-145 ORE => 6 MNCFX
-1 NVRVD => 8 CXFTF
-1 VJHF, 6 MNCFX => 4 RFSQX
-176 ORE => 6 VJHF');
+$input = explode("\n", '157 ORE => 5 NZVS
+165 ORE => 6 DCFZ
+44 XJWVT, 5 KHKGT, 1 QDVJ, 29 NZVS, 9 GPVTF, 48 HKGWZ => 1 FUEL
+12 HKGWZ, 1 GPVTF, 8 PSHF => 9 QDVJ
+179 ORE => 7 PSHF
+177 ORE => 5 HKGWZ
+7 DCFZ, 7 PSHF => 2 XJWVT
+165 ORE => 2 GPVTF
+3 DCFZ, 7 NZVS, 5 HKGWZ, 10 PSHF => 8 KHKGT');
 /** @var Reaction[] $reactions */
 $reactions = [];
 
-/** @var Substance $fuel */
-$fuel = null;
+$oreReactions = [];
 
 foreach ($input as $line) {
     [ $inputs, $output ] = explode('=>', $line, 2);
@@ -82,52 +74,27 @@ foreach ($input as $line) {
     }, explode(',', trim($inputs)));
 
     $output = new Substance($outputName, intval($outputAmount));
-    $reactions[] = new Reaction($inputs, $output);
+    $reaction = new Reaction($inputs, $output);
+    $reactions[] = $reaction;
 
-    if ($output->name === 'FUEL') {
-        $fuel = clone $output;
-        $fuel->amount = 1;
+    if (count($inputs) === 1 && $inputs[0]->name === 'ORE') {
+        $oreReactions[] = $reaction;
     }
 }
 
-/** @var Substance[] $toCreate */
-$toCreate = [ $fuel ];
-$shoppingList = [];
+// tree of reactions
+// children are possible reactions with multiplier (e.g. reaction A x 1, reaction A x 2)
+// children are ordered by how many children they have (or multiplier) and how many resources they use
 
-while (!empty($toCreate)) {
-    $substance = array_shift($toCreate);
+$path = [];
 
-    if ($substance->name === 'ORE') { // ore
-        continue;
+for ($branchingFactor = 1; $branchingFactor <= 20; $branchingFactor++) {
+    $root = clone reset($oreReactions);
+
+    $queue = new SplPriorityQueue();
+    $queue->insert($root, 1);
+
+    while (!$queue->isEmpty()) {
+        $reaction = $queue->extract();
     }
-
-    $reaction = findReactionForSubstance($substance->name, $reactions);
-    $multiplier = ceil($substance->amount / $reaction->output->amount);
-
-    foreach ($reaction->inputs as $input) {
-        if (!array_key_exists($input->name, $shoppingList)) {
-            $shoppingList[$input->name] = 0;
-        }
-
-        $shoppingList[$input->name] += ($multiplier * $input->amount);
-    }
-
-    $toCreate = array_merge($toCreate, $reaction->inputs);
 }
-
-//$oreRequired = 0;
-
-foreach ($shoppingList as $name => $amount) {
-    echo sprintf('%s => %d'.PHP_EOL, $name, $amount);
-    $reaction = findReactionForSubstance($name, $reactions);
-
-    if ($reaction === null || count($reaction->inputs) > 1 || $reaction->inputs[0]->name !== 'ORE') {
-        continue;
-    }
-
-    $timesToRunReaction = ceil($amount / $reaction->output->amount);
-    $oreRequired = $timesToRunReaction * $reaction->inputs[0]->amount;
-
-}
-
-//var_dump($oreRequired);
