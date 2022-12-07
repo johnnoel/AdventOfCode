@@ -50,13 +50,9 @@ function filterTotalSize(Dir $d, int $targetSize): array
         foreach ($d->subdirs as $dir) {
             if ($dir->size() <= $targetSize) {
                 $ret[] = $dir;
-            } else {
-                $ret = array_merge($ret, filterTotalSize($dir, $targetSize));
             }
-        }
-    } else {
-        if ($d->totalFileSize() <= $targetSize) {
-            $ret[] = $d;
+
+            $ret = array_merge($ret, filterTotalSize($dir, $targetSize));
         }
     }
 
@@ -65,7 +61,7 @@ function filterTotalSize(Dir $d, int $targetSize): array
 
 $root = new Dir('/');
 $shell = new Shell();
-$input = array_filter(explode("\n", trim(file_get_contents(__DIR__ . '/temp.txt'))));
+$input = array_filter(explode("\n", trim(file_get_contents(__DIR__ . '/day07.txt'))));
 
 foreach ($input as $i) {
     if (str_starts_with($i, '$')) {
